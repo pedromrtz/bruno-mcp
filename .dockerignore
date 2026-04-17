@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.gitignore
+.vscode
+coverage
+npm-debug.log*
+README.md
+INTEGRATION.md
+SPEC.md
+examples
+docs

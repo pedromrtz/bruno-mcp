@@ -37,29 +37,30 @@ The Bruno MCP Server can be integrated with various AI clients that support the 
 ### Quick Setup for Claude Desktop
 
 1. **Edit Claude Desktop config file:**
-   - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Windows:** `%APPDATA%/Claude/claude_desktop_config.json`
-   - **Linux:** `~/.config/Claude/claude_desktop_config.json`
+    - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+    - **Windows:** `%APPDATA%/Claude/claude_desktop_config.json`
+    - **Linux:** `~/.config/Claude/claude_desktop_config.json`
 
 2. **Add Bruno MCP Server:**
-   ```json
-   {
-     "mcpServers": {
-       "bruno-mcp": {
-         "command": "node",
-         "args": ["/absolute/path/to/bruno-mcp/dist/index.js"],
-         "env": {}
-       }
-     }
-   }
-   ```
+
+    ```json
+    {
+        "mcpServers": {
+            "bruno-mcp": {
+                "command": "node",
+                "args": ["/absolute/path/to/bruno-mcp/dist/index.js"],
+                "env": {}
+            }
+        }
+    }
+    ```
 
 3. **Restart Claude Desktop**
 
 ### Supported Clients
 
 - ✅ **Claude Desktop App** - Full support
-- ✅ **Claude Code (VS Code)** - Full support  
+- ✅ **Claude Code (VS Code)** - Full support
 - ✅ **Continue** - Tools and resources
 - ✅ **Cline** - Tools and resources
 - ✅ **LM Studio** - Tools support
@@ -73,11 +74,13 @@ The Bruno MCP Server can be integrated with various AI clients that support the 
 ### With Claude Code or MCP Inspector
 
 1. Start the MCP server:
+
 ```bash
 npm start
 ```
 
 2. Use the MCP Inspector to test tools:
+
 ```bash
 npx @modelcontextprotocol/inspector
 ```
@@ -85,9 +88,11 @@ npx @modelcontextprotocol/inspector
 ### Available MCP Tools
 
 #### `create_collection`
+
 Create a new Bruno collection with configuration.
 
 **Parameters:**
+
 - `name` (string): Collection name
 - `description` (string, optional): Collection description
 - `baseUrl` (string, optional): Default base URL
@@ -95,40 +100,46 @@ Create a new Bruno collection with configuration.
 - `ignore` (array, optional): Files to ignore
 
 **Example:**
+
 ```json
 {
-  "name": "my-api-tests",
-  "description": "API tests for my application", 
-  "baseUrl": "https://api.example.com",
-  "outputPath": "./collections"
+    "name": "my-api-tests",
+    "description": "API tests for my application",
+    "baseUrl": "https://api.example.com",
+    "outputPath": "./collections"
 }
 ```
 
 #### `create_environment`
+
 Create environment configuration files.
 
 **Parameters:**
+
 - `collectionPath` (string): Path to Bruno collection
 - `name` (string): Environment name
 - `variables` (object): Environment variables
 
 **Example:**
+
 ```json
 {
-  "collectionPath": "./collections/my-api-tests",
-  "name": "production",
-  "variables": {
-    "baseUrl": "https://api.example.com",
-    "apiKey": "prod-key-123",
-    "timeout": 30000
-  }
+    "collectionPath": "./collections/my-api-tests",
+    "name": "production",
+    "variables": {
+        "baseUrl": "https://api.example.com",
+        "apiKey": "prod-key-123",
+        "timeout": 30000
+    }
 }
 ```
 
 #### `create_request`
+
 Generate .bru request files.
 
 **Parameters:**
+
 - `collectionPath` (string): Path to collection
 - `name` (string): Request name
 - `method` (string): HTTP method
@@ -139,50 +150,58 @@ Generate .bru request files.
 - `folder` (string, optional): Folder organization
 
 **Example:**
+
 ```json
 {
-  "collectionPath": "./collections/my-api-tests",
-  "name": "Get User Profile",
-  "method": "GET",
-  "url": "{{baseUrl}}/users/{{userId}}",
-  "headers": {
-    "Authorization": "Bearer {{token}}"
-  },
-  "folder": "users"
+    "collectionPath": "./collections/my-api-tests",
+    "name": "Get User Profile",
+    "method": "GET",
+    "url": "{{baseUrl}}/users/{{userId}}",
+    "headers": {
+        "Authorization": "Bearer {{token}}"
+    },
+    "folder": "users"
 }
 ```
 
 #### `create_crud_requests`
+
 Generate complete CRUD operation sets.
 
 **Parameters:**
+
 - `collectionPath` (string): Path to collection
 - `entityName` (string): Entity name (e.g., "Users")
 - `baseUrl` (string): API base URL
 - `folder` (string, optional): Folder name
 
 **Example:**
+
 ```json
 {
-  "collectionPath": "./collections/my-api-tests",
-  "entityName": "Products",
-  "baseUrl": "{{baseUrl}}/api/v1",
-  "folder": "products"
+    "collectionPath": "./collections/my-api-tests",
+    "entityName": "Products",
+    "baseUrl": "{{baseUrl}}/api/v1",
+    "folder": "products"
 }
 ```
 
 #### `add_test_script`
+
 Add test scripts to existing requests.
 
 **Parameters:**
+
 - `bruFilePath` (string): Path to .bru file
 - `scriptType` (string): Script type (pre-request, post-response, tests)
 - `script` (string): JavaScript code
 
 #### `get_collection_stats`
+
 Get statistics about a collection.
 
 **Parameters:**
+
 - `collectionPath` (string): Path to collection
 
 ## Generated File Structure
@@ -247,16 +266,19 @@ tests {
 ## Testing
 
 ### Run Unit Tests
+
 ```bash
 npm test
 ```
 
 ### Run Integration Tests
+
 ```bash
 npm run test:integration
 ```
 
 ### Test with Bruno CLI
+
 ```bash
 # Generate a collection first
 # Then run tests with Bruno CLI
@@ -268,7 +290,7 @@ bruno-cli run ./collections/my-api-tests/
 See the `examples/` directory for complete usage examples:
 
 - `examples/jsonplaceholder/` - JSONPlaceholder API testing
-- `examples/authentication/` - Authentication workflows  
+- `examples/authentication/` - Authentication workflows
 - `examples/complex-workflows/` - Multi-step API scenarios
 
 ## Development
@@ -295,6 +317,62 @@ npm run build      # Build TypeScript
 npm run dev        # Development mode
 npm run clean      # Clean build artifacts
 ```
+
+### Docker Workflow (Levantado Manual)
+
+El servidor MCP usa stdio. En Docker, el flujo recomendado es:
+
+1. Levantar el contenedor manualmente.
+2. Consumir el MCP desde el cliente con `docker exec`.
+3. Bajar el contenedor cuando termines.
+
+Comandos base:
+
+```bash
+# Dev: build + up
+npm run docker:dev:up
+
+# Validacion MCP dentro del contenedor
+npm run docker:test:mcp
+
+# Down
+npm run docker:dev:down
+```
+
+Para usar imagen ya compilada/publicada:
+
+```bash
+npm run docker:prod:up
+npm run docker:prod:down
+```
+
+### Archivos Compose Actuales
+
+- `compose.yml`: entorno de desarrollo, hace build desde Dockerfile.
+- `compose.prod.yml`: solo usa imagen precompilada.
+
+### Config MCP para Consumir Contenedor Ya Levantado
+
+Ejemplo para `mcp.json` (cliente no levanta contenedor, solo consume):
+
+```json
+{
+    "servers": {
+        "bruno_mcp": {
+            "type": "stdio",
+            "command": "docker",
+            "args": ["exec", "-i", "bruno_mcp", "node", "--loader", "ts-node/esm/transpile-only", "src/index.ts"]
+        }
+    }
+}
+```
+
+Nota importante:
+
+- Si el contenedor `bruno_mcp` no esta en estado running, el cliente MCP fallara.
+- Este modo evita dependencia de ruta local del codigo (`cwd`) y funciona bien con imagen ya compilada.
+
+Mas detalles por cliente en `INTEGRATION.md`.
 
 ### Code Quality
 
