@@ -17,6 +17,8 @@
     "docker:up": "npm run docker:dev:up",
     "docker:down": "npm run docker:dev:down",
     "docker:test:mcp": "docker compose -f compose.yml exec -T bruno_mcp node scripts/mcp_in_container_test.mjs",
+    "docker:test:mcp:all": "docker compose -f compose.yml exec -T bruno_mcp node scripts/mcp_all_tools_in_container_test.mjs",
+    "docker:prod:test:mcp:all": "docker compose -f compose.prod.yml exec -T bruno_mcp node scripts/mcp_all_tools_in_container_test.mjs",
     "docker:smoke": "npm run docker:image:build && npm run docker:dev:up && npm run docker:test:mcp",
     "test": "jest",
     "test:unit": "jest tests/unit",

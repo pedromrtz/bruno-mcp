@@ -5,6 +5,8 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { promises as fs } from "fs";
+import { isAbsolute, join, normalize } from "path";
 import { z } from "zod";
 
 // Import our Bruno modules
@@ -18,6 +20,7 @@ export class BrunoMcpServer {
     private collectionManager;
     private environmentManager;
     private requestBuilder;
+    private collectionsRootPath: string;
 
     constructor() {
         // Initialize MCP server
@@ -30,6 +33,7 @@ export class BrunoMcpServer {
         this.collectionManager = createCollectionManager();
         this.environmentManager = createEnvironmentManager();
         this.requestBuilder = createRequestBuilder();
+        this.collectionsRootPath = process.env.BRUNO_COLLECTIONS_ROOT?.trim() || "/app/bruno_collections";
 
         this.setupTools();
     }
@@ -67,11 +71,13 @@ export class BrunoMcpServer {
             },
             async (args) => {
                 try {
+                    const resolvedOutputPath = await this.resolveToolPath(args.outputPath, true);
+
                     const input: CreateCollectionInput = {
                         name: args.name,
                         description: args.description,
                         baseUrl: args.baseUrl,
-                        outputPath: args.outputPath,
+                        outputPath: resolvedOutputPath,
                         ignore: args.ignore,
                     };
 
@@ -129,8 +135,10 @@ export class BrunoMcpServer {
             },
             async (args) => {
                 try {
+                    const resolvedCollectionPath = await this.resolveToolPath(args.collectionPath);
+
                     const input: CreateEnvironmentInput = {
-                        collectionPath: args.collectionPath,
+                        collectionPath: resolvedCollectionPath,
                         name: args.name,
                         variables: args.variables,
                     };
@@ -215,8 +223,10 @@ export class BrunoMcpServer {
             },
             async (args) => {
                 try {
+                    const resolvedCollectionPath = await this.resolveToolPath(args.collectionPath);
+
                     const input: CreateRequestInput = {
-                        collectionPath: args.collectionPath,
+                        collectionPath: resolvedCollectionPath,
                         name: args.name,
                         method: args.method as HttpMethod,
                         url: args.url,
@@ -293,13 +303,15 @@ export class BrunoMcpServer {
             },
             async (args) => {
                 try {
+                    const resolvedBruFilePath = await this.resolveToolPath(args.bruFilePath);
+
                     // For now, this is a placeholder implementation
                     // In a full implementation, we'd parse the existing .bru file and add the script
                     return {
                         content: [
                             {
                                 type: "text",
-                                text: `✅ ${args.scriptType} script added to ${args.bruFilePath}\n\nScript content:\n${args.script}`,
+                                text: `✅ ${args.scriptType} script added to ${resolvedBruFilePath}\n\nScript content:\n${args.script}`,
                             },
                         ],
                     };
@@ -364,12 +376,13 @@ export class BrunoMcpServer {
             },
             async (args) => {
                 try {
+                    const resolvedCollectionPath = await this.resolveToolPath(args.collectionPath);
                     const results = [];
 
                     for (let i = 0; i < args.requests.length; i++) {
                         const req = args.requests[i];
                         const input: CreateRequestInput = {
-                            collectionPath: args.collectionPath,
+                            collectionPath: resolvedCollectionPath,
                             name: req.name,
                             method: req.method as HttpMethod,
                             url: req.url,
@@ -438,7 +451,8 @@ export class BrunoMcpServer {
             },
             async (args) => {
                 try {
-                    const results = await this.requestBuilder.createCrudRequests(args.collectionPath, args.entityName, args.baseUrl, args.folder);
+                    const resolvedCollectionPath = await this.resolveToolPath(args.collectionPath);
+                    const results = await this.requestBuilder.createCrudRequests(resolvedCollectionPath, args.entityName, args.baseUrl, args.folder);
 
                     const successCount = results.filter((r) => r.success).length;
                     const failCount = results.filter((r) => !r.success).length;
@@ -481,14 +495,15 @@ export class BrunoMcpServer {
             },
             async (args) => {
                 try {
-                    const collections = await this.collectionManager.listCollections(args.path);
+                    const resolvedPath = await this.resolveToolPath(args.path, true);
+                    const collections = await this.collectionManager.listCollections(resolvedPath);
 
                     if (collections.length === 0) {
                         return {
                             content: [
                                 {
                                     type: "text",
-                                    text: `No Bruno collections found in: ${args.path}`,
+                                    text: `No Bruno collections found in: ${resolvedPath}`,
                                 },
                             ],
                         };
@@ -502,7 +517,7 @@ export class BrunoMcpServer {
                         content: [
                             {
                                 type: "text",
-                                text: `Found ${collections.length} Bruno collection(s) in: ${args.path}\n\n${lines.join("\n\n")}`,
+                                text: `Found ${collections.length} Bruno collection(s) in: ${resolvedPath}\n\n${lines.join("\n\n")}`,
                             },
                         ],
                     };
@@ -536,13 +551,14 @@ export class BrunoMcpServer {
             },
             async (args) => {
                 try {
-                    const stats = await this.collectionManager.getCollectionStats(args.collectionPath);
+                    const resolvedCollectionPath = await this.resolveToolPath(args.collectionPath);
+                    const stats = await this.collectionManager.getCollectionStats(resolvedCollectionPath);
 
                     return {
                         content: [
                             {
                                 type: "text",
-                                text: `📊 Collection Statistics for ${args.collectionPath}:
+                                text: `📊 Collection Statistics for ${resolvedCollectionPath}:
 
 📁 Total Requests: ${stats.totalRequests}
 📂 Folders: ${stats.folders.length > 0 ? stats.folders.join(", ") : "None"}
@@ -582,6 +598,87 @@ ${
 
         console.error("Bruno MCP Server started successfully! 🚀");
         console.error("Ready to generate Bruno API testing files.");
+    }
+
+    /**
+     * Resolver de rutas para soportar host path en docker
+     */
+    private async resolveToolPath(inputPath: string, fallbackToCollectionsRoot = false): Promise<string> {
+        const trimmedPath = inputPath.trim();
+        if (trimmedPath.length === 0) {
+            return trimmedPath;
+        }
+
+        const pathCandidates = this.buildPathCandidates(trimmedPath);
+
+        for (const candidate of pathCandidates) {
+            if (await this.pathExists(candidate)) {
+                return candidate;
+            }
+        }
+
+        if (fallbackToCollectionsRoot) {
+            return this.collectionsRootPath;
+        }
+
+        return pathCandidates[0];
+    }
+
+    /**
+     * Genera rutas candidatas para host y contenedor
+     */
+    private buildPathCandidates(inputPath: string): string[] {
+        const pathCandidates: string[] = [];
+        const normalizedInputPath = normalize(inputPath);
+        const isWindowsAbsolutePath = /^[A-Za-z]:[\\/]/.test(inputPath);
+
+        pathCandidates.push(normalizedInputPath);
+
+        if (!isAbsolute(normalizedInputPath) && !isWindowsAbsolutePath) {
+            pathCandidates.push(join(this.collectionsRootPath, normalizedInputPath));
+            return this.uniquePaths(pathCandidates);
+        }
+
+        const normalizedSlashPath = inputPath.replace(/\\/g, "/");
+        const pathWithoutDrive = normalizedSlashPath.replace(/^[A-Za-z]:\//, "/");
+        const pathSegments = pathWithoutDrive.split("/").filter((segment) => segment.length > 0);
+
+        for (let index = 0; index < pathSegments.length; index++) {
+            const suffixSegments = pathSegments.slice(index);
+            pathCandidates.push(join(this.collectionsRootPath, ...suffixSegments));
+        }
+
+        return this.uniquePaths(pathCandidates);
+    }
+
+    /**
+     * Quita duplicados preservando orden
+     */
+    private uniquePaths(paths: string[]): string[] {
+        const seen = new Set<string>();
+        const unique: string[] = [];
+
+        for (const path of paths) {
+            const normalizedPath = normalize(path);
+            if (!seen.has(normalizedPath)) {
+                seen.add(normalizedPath);
+                unique.push(normalizedPath);
+            }
+        }
+
+        return unique;
+    }
+
+    /**
+     * Valida existencia de ruta sin lanzar error
+     */
+    private async pathExists(path: string): Promise<boolean> {
+        try {
+            await fs.access(path);
+            return true;
+        } catch {
+            return false;
+        }
     }
 }
 

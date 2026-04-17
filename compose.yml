@@ -9,6 +9,7 @@ services:
         tty: true
         environment:
             NODE_ENV: production
+            BRUNO_COLLECTIONS_ROOT: /app/bruno_collections
         volumes:
             - type: bind
               source: ${BRUNO_COLLECTIONS_PATH:?BRUNO_COLLECTIONS_PATH is required}

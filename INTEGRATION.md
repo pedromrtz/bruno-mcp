@@ -303,12 +303,30 @@ Comandos utiles:
 # Desarrollo
 npm run docker:dev:up
 npm run docker:test:mcp
+npm run docker:test:mcp:all
 npm run docker:dev:down
 
 # Produccion (imagen ya compilada/publicada)
 npm run docker:prod:up
+npm run docker:prod:test:mcp:all
 npm run docker:prod:down
 ```
+
+Variables de entorno recomendadas para volumen de colecciones:
+
+- `BRUNO_COLLECTIONS_PATH`: ruta host de colecciones Bruno.
+- `BRUNO_COLLECTIONS_ROOT=/app/bruno_collections`: ruta interna del contenedor.
+
+Ejemplos de `BRUNO_COLLECTIONS_PATH`:
+
+- Linux: `/home/usuario/bruno`
+- macOS: `/Users/usuario/bruno`
+- Windows Docker Desktop: `C:/Users/usuario/Documents/bruno`
+
+Nota de uso de tools:
+
+- En Docker, el MCP recibe rutas del contenedor.
+- Si envias rutas absolutas de host (linux/windows/mac), el server intenta resolverlas automaticamente contra `/app/bruno_collections`.
 
 ### Comando MCP Recomendado (Consume Contenedor Ya Levantado)
 

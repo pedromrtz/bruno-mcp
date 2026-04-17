@@ -343,8 +343,21 @@ Para usar imagen ya compilada/publicada:
 
 ```bash
 npm run docker:prod:up
+npm run docker:prod:test:mcp:all
 npm run docker:prod:down
 ```
+
+Configuracion recomendada para path de colecciones (linux/windows/mac):
+
+- Define `BRUNO_COLLECTIONS_PATH` con ruta valida del host.
+- Usa `BRUNO_COLLECTIONS_ROOT=/app/bruno_collections` en el contenedor.
+- Dentro de las tools MCP, usa preferentemente rutas bajo `/app/bruno_collections`.
+
+Ejemplos de `BRUNO_COLLECTIONS_PATH`:
+
+- Linux: `/home/usuario/bruno`
+- macOS: `/Users/usuario/bruno`
+- Windows Docker Desktop: `C:/Users/usuario/Documents/bruno`
 
 ### Archivos Compose Actuales
 
