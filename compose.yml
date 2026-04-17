@@ -4,6 +4,7 @@ services:
             context: .
             dockerfile: Dockerfile
         image: bruno-mcp:latest
+        pull_policy: never
         container_name: bruno_mcp
         stdin_open: true
         tty: true

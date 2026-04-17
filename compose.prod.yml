@@ -1,6 +1,7 @@
 services:
     bruno_mcp:
         image: pmartz/bruno-mcp:latest
+        pull_policy: always
         container_name: bruno_mcp
         stdin_open: true
         tty: true
@@ -9,6 +10,6 @@ services:
             BRUNO_COLLECTIONS_ROOT: /app/bruno_collections
         volumes:
             - type: bind
-              source: ${BRUNO_COLLECTIONS_PATH:-./collections}
+              source: ${BRUNO_COLLECTIONS_PATH:?BRUNO_COLLECTIONS_PATH is required}
               target: /app/bruno_collections
         command: ["node", "--loader", "ts-node/esm/transpile-only", "src/index.ts"]
